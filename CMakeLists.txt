@@ -98,6 +98,7 @@ option(ENABLE_TESTS "Enables the generation of tests" ON)
 option(ENABLE_FI_IO "Enables the I/O failure injection mechanism" OFF)
 option(ENABLE_LUSTRE "Enables Lustre Support" OFF)
 option(ENABLE_DOCU "Enables the generation of a Doxygen documentation" OFF)
+option(ENABLE_TUTORIAL "Enables the generation of tutorial files" OFF)
 
 set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS ON)
 
@@ -164,6 +165,12 @@ SRC_FTI
     src/utility.c
 )
 
+if (ENABLE_SIONLIB)
+    list(APPEND SRC_FTI "src/IO/sion-fti.c")
+    message("${SRC_FTI}")
+endif()
+
+
 if (ENABLE_GPU)
 set(
     SRC_CUDA_FTI
@@ -225,9 +232,6 @@ else()
 endif()
 set_target_properties(fti.static fti.shared PROPERTIES POSITION_INDEPENDENT_CODE True)
 
-append_property(SOURCE ${SRC_FTI}
-    PROPERTY COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}" "${SIONLIB_CFLAGS}" "${ADD_CFLAGS}")
-
 if( NOT ZLIB_FOUND )
 append_property(SOURCE ${SRC_CUDA_FTI}
     PROPERTY COMPILE_FLAGS "-DFTI_NOZLIB")
@@ -271,6 +275,7 @@ if(ENABLE_LUSTRE)
     endif()
 endif()
 
+
 if(ENABLE_SIONLIB)
     set(SIONLIBBASE "" CACHE FILEPATH "base path to SIONlib installation")
     set(SIONLIB_INCLUDE_DIR "${SIONLIBBASE}/include/")
@@ -285,6 +290,7 @@ if(ENABLE_SIONLIB)
     target_link_libraries(fti.shared "${SIONLIB_MPI}" "${SIONLIB_GEN}" "${SIONLIB_SER}" "${SIONLIB_COM}" "${SIONLIB_COM_LOCK}")
     add_definitions(-DENABLE_SIONLIB)
 endif()
+
 
 if(ENABLE_HDF5)
     find_package(HDF5 COMPONENTS HL C REQUIRED)
@@ -308,6 +314,9 @@ endif()
 if(ENABLE_FI_IO)
     add_definitions(-DENABLE_FTI_FI_IO)
 endif()
+
+append_property(SOURCE ${SRC_FTI}
+    PROPERTY COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS} ${SIONLIB_CFLAGS} ${ADD_CFLAGS}")
 
 set(FTI_TARGETS fti.static fti.shared)
 install(TARGETS fti.static fti.shared DESTINATION lib)
@@ -377,6 +386,10 @@ endif()
 
 if(ENABLE_TESTS)
 	add_subdirectory(test)
+endif()
+
+if(ENABLE_TUTORIAL)
+	add_subdirectory(tutorial)
 endif()
 
 if(ENABLE_DOCU)
